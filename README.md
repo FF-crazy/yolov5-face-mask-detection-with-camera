@@ -9,16 +9,24 @@ The model was trained on [Face-Mask](https://www.kaggle.com/andrewmvd/face-mask-
 * `Mask worn incorrectly`
 
 ### Setup
-* Clone this repo and install YOLOv5:
+* Clone this repo and install dependencies:
 ```
 git clone https://github.com/spacewalk01/face-mask-detection
 cd face-mask-detection
+
+# Install dependencies
+pip install -r requirements.txt
 
 # Install yolov5
 git clone https://github.com/ultralytics/yolov5
 cd yolov5
 pip install -r requirements.txt
 ```
+
+The project now includes:
+* Real-time face mask detection using your computer's webcam
+* Pre-trained YOLOv5 model for face mask detection
+* Support for three classes: with mask, without mask, and mask worn incorrectly
 
 #### Training
 * Download [Face-Mask](https://www.kaggle.com/andrewmvd/face-mask-detection) dataset from Kaggle and copy it into `datasets` folder. 
@@ -41,6 +49,19 @@ python detect.py --source ../datasets/input.mp4 --weights runs/train/exp/weights
 ```
 python detect.py --source ../datasets/input.mp4 --weights ../models/mask_yolov5.pt --conf 0.2
 ```
+
+#### Real-time Webcam Detection
+* You can use your computer's webcam for real-time face mask detection:
+```
+cd face-mask-detection
+python webcam.py
+```
+* This will open your webcam and start detecting face masks in real-time. Press 'q' to quit the application.
+* The application shows:
+  * Green bounding box: Person wearing a mask correctly
+  * Red bounding box: Person not wearing a mask
+  * Yellow bounding box: Person wearing a mask incorrectly
+  * FPS (Frames Per Second) in the top-left corner
 
 ### Results
 The following charts were obtained after training YOLOv5s with input size 640x640 on the `Face Mask` dataset for 100 epochs.
@@ -70,7 +91,7 @@ The following metrics were measured on the valid dataset containing 171 images. 
 | ![](results/gt1.png) | ![](results/pred1.png) |
 | ![](results/gt2a.png) | ![](results/pred2a.png) | 
 | ![](results/gt3.png) | ![](results/pred3.png) | 
-  
+
 ### Reference
 
 * [Darknet](https://github.com/pjreddie/darknet/blob/master/scripts/voc_label.py)
