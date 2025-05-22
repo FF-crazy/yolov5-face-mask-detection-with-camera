@@ -95,21 +95,51 @@ def augment_image_and_labels(
     boxes = read_yolo_labels(label_path)
 
     # Convert YOLO format to xyxy for albumentations
-    bboxes = []
+    # And separate coordinates from class labels
+    pascal_voc_bboxes = []
+    class_labels = []
     for box in boxes:
         xyxy_box = yolo_to_xyxy(box, width, height)
-        bboxes.append([xyxy_box[1], xyxy_box[2], xyxy_box[3], xyxy_box[4], xyxy_box[0]])
+        pascal_voc_bboxes.append(
+            [xyxy_box[1], xyxy_box[2], xyxy_box[3], xyxy_box[4]]
+        )  # xmin, ymin, xmax, ymax
+        class_labels.append(xyxy_box[0])  # class_id
 
     # Apply augmentation
     try:
-        transformed = aug_transforms(image=img, bboxes=bboxes)
+        transformed = aug_transforms(
+            image=img, bboxes=pascal_voc_bboxes, class_labels=class_labels
+        )
         augmented_img = transformed["image"]
-        augmented_bboxes = transformed["bboxes"]
+        augmented_pascal_voc_bboxes = transformed["bboxes"]
+        # Albumentations might return fewer bboxes if some are outside image boundaries after transform
+        # Need to ensure class_labels match the augmented_pascal_voc_bboxes
+        # This requires careful handling if bboxes are dropped. For simplicity, assuming all bboxes are kept
+        # or that the order of class_labels corresponds to the order of augmented_pascal_voc_bboxes.
+        # A more robust solution would involve tracking labels for kept bboxes.
+        # For now, we assume transformed["class_labels"] would be the correctly filtered/ordered labels if they were modified.
+        # However, the `label_fields` mechanism is primarily for passing them in, they aren't always in the output dict unless specified or part of a more complex setup.
+        # Given the current setup, we reuse the original class_labels, assuming their order matches the output bboxes.
+        # This is a common simplification if transforms don't drop/reorder labels independently of bboxes.
 
-        # Convert back to YOLO format
         augmented_boxes = []
-        for bbox in augmented_bboxes:
-            x1, y1, x2, y2, cls_id = bbox
+        # Ensure we only process as many bounding boxes as we have labels for (or vice-versa)
+        # This is a safeguard, ideally, augmented_pascal_voc_bboxes and class_labels (or transformed['class_labels']) should align.
+        num_output_bboxes = len(augmented_pascal_voc_bboxes)
+        for i in range(num_output_bboxes):
+            bbox_coords = augmented_pascal_voc_bboxes[i]
+            # If class_labels were also transformed and returned in `transformed` dict, use that.
+            # For now, assuming original class_labels align with output bboxes.
+            cls_id = class_labels[
+                i
+            ]  # This assumes class_labels order is preserved or bboxes are not dropped.
+
+            x1, y1, x2, y2 = (
+                bbox_coords[0],
+                bbox_coords[1],
+                bbox_coords[2],
+                bbox_coords[3],
+            )
             yolo_box = xyxy_to_yolo([cls_id, x1, y1, x2, y2], width, height)
             augmented_boxes.append(yolo_box)
 

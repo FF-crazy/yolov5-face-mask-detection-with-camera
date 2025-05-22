@@ -62,7 +62,7 @@ def convert_annotation(classes, input_path, output_path):
         basename_no_ext = os.path.splitext(basename)[0]
 
         in_file = open(input_path)
-        out_file = open(output_path + "/" + basename_no_ext + ".txt", "w")
+        out_file = open(os.path.join(output_path, basename_no_ext + ".txt"), "w")
 
         tree = ET.parse(in_file)
         root = tree.getroot()
@@ -88,10 +88,10 @@ def convert_annotation(classes, input_path, output_path):
 
         in_file.close()
         out_file.close()
-        return True
+        return None  # Return None on success
     except Exception as e:
         print(f"Error converting annotation {input_path}: {e}")
-        return False
+        return input_path  # Return input_path on failure
 
 
 def download_dataset(url, save_path):
@@ -182,7 +182,8 @@ def main():
             print(f"No image files found in {IMAGE_DIR}. Check your dataset structure.")
             sys.exit(1)
 
-        conversion_results = []
+        failed_conversions = []
+        successful_conversions = 0
         for image_file in tqdm(image_files):
             basename = os.path.basename(image_file)
             basename_no_ext = os.path.splitext(basename)[0]
@@ -193,9 +194,16 @@ def main():
                 continue
 
             result = convert_annotation(classes, annotation_path, PROCESSED_LABEL_DIR)
-            conversion_results.append(result)
+            if result is None:
+                successful_conversions += 1
+            else:
+                failed_conversions.append(result)
 
-        print(f"Converted {sum(conversion_results)} annotations successfully")
+        print(f"Converted {successful_conversions} annotations successfully.")
+        if failed_conversions:
+            print("Failed to convert the following annotation files:")
+            for f_path in failed_conversions:
+                print(f"  - {f_path}")
 
         # Split dataset
         print(f"Splitting dataset with validation ratio: {args.split_ratio}")

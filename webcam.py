@@ -5,6 +5,7 @@ import time
 import argparse
 import os
 from pathlib import Path
+import yaml
 
 
 def parse_args():
@@ -61,13 +62,32 @@ def main():
         model.eval()
         print("Model loaded successfully")
 
-        # Class names
-        class_names = ["with_mask", "without_mask", "mask_weared_incorrect"]
-        colors = [
-            (0, 255, 0),
-            (0, 0, 255),
-            (0, 255, 255),
-        ]  # Green for with mask, Red for without mask, Yellow for incorrect
+        # Load class names from mask_config.yaml
+        config_path = Path(__file__).parent / "mask_config.yaml"
+        if not config_path.exists():
+            print(f"Error: mask_config.yaml not found at {config_path}")
+            # Fallback to hardcoded classes if config not found, or handle error differently
+            class_names = ["with_mask", "without_mask", "mask_weared_incorrect"]
+            print("Warning: Using hardcoded class names.")
+        else:
+            with open(config_path, "r") as f:
+                config = yaml.safe_load(f)
+            class_names = config["names"]
+            print(f"Loaded class names: {class_names}")
+
+        # Dynamically generate colors based on number of classes
+        colors = []
+        np.random.seed(42)  # for consistent colors
+        for _ in range(len(class_names)):
+            colors.append(tuple(np.random.randint(0, 255, size=3).tolist()))
+
+        # Example of specific colors if needed, override dynamic ones
+        # if len(class_names) == 3: # Or map by name
+        #     colors = [
+        #         (0, 255, 0),  # Green for with_mask
+        #         (0, 0, 255),  # Red for without_mask
+        #         (0, 255, 255) # Yellow for incorrect
+        #     ]
 
         # Open webcam
         print(f"Opening camera device {args.camera}...")
