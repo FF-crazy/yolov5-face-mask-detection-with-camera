@@ -2,79 +2,184 @@ import cv2
 import torch
 import numpy as np
 import time
+import argparse
+import os
 from pathlib import Path
 
-# Initialize
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print(f"Using {device} device")
 
-# Load model
-model_path = Path('models/mask_yolov5.pt')
-model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path, force_reload=True)
-model.to(device)
-model.eval()
+def parse_args():
+    parser = argparse.ArgumentParser(description="Face Mask Detection using YOLOv5")
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="models/mask_yolov5.pt",
+        help="Path to YOLOv5 model",
+    )
+    parser.add_argument(
+        "--conf-thres",
+        type=float,
+        default=0.5,
+        help="Confidence threshold for detections",
+    )
+    parser.add_argument("--camera", type=int, default=0, help="Camera device ID")
+    parser.add_argument(
+        "--width", type=int, default=640, help="Width of the frames in the video stream"
+    )
+    parser.add_argument(
+        "--height",
+        type=int,
+        default=480,
+        help="Height of the frames in the video stream",
+    )
+    return parser.parse_args()
 
-# Class names
-class_names = ['with_mask', 'without_mask', 'mask_weared_incorrect']
-colors = [(0, 255, 0), (0, 0, 255), (0, 255, 255)]  # Green for with mask, Red for without mask, Yellow for incorrect
-
-def process_frame(frame):
-    # Inference
-    results = model(frame)
-    
-    # Process results
-    for *xyxy, conf, cls in results.xyxy[0]:  # xyxy, confidence, class
-        if conf > 0.5:  # confidence threshold
-            # Get coordinates and class
-            x1, y1, x2, y2 = int(xyxy[0]), int(xyxy[1]), int(xyxy[2]), int(xyxy[3])
-            class_idx = int(cls)
-            label = f'{class_names[class_idx]} {conf:.2f}'
-            
-            # Draw bounding box
-            color = colors[class_idx]
-            cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-            
-            # Add label
-            cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
-    
-    return frame
 
 def main():
-    # Open webcam
-    cap = cv2.VideoCapture(0)  # 0 for default camera
-    
-    if not cap.isOpened():
-        print("Error: Could not open webcam.")
+    # Parse command line arguments
+    args = parse_args()
+
+    # Check if CUDA is available
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using {device} device")
+
+    # Check if model file exists
+    model_path = Path(args.model)
+    if not model_path.exists():
+        print(f"Error: Model file not found at {model_path}")
+        print(
+            f"Please make sure the model file exists or specify a different path with --model"
+        )
         return
-    
-    print("Webcam opened successfully. Press 'q' to quit.")
-    
-    while True:
-        # Read frame
-        ret, frame = cap.read()
-        if not ret:
-            print("Error: Failed to capture image")
-            break
-        
-        # Process frame
-        start_time = time.time()
-        processed_frame = process_frame(frame)
-        end_time = time.time()
-        
-        # Calculate FPS
-        fps = 1 / (end_time - start_time)
-        cv2.putText(processed_frame, f'FPS: {fps:.2f}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-        
-        # Display the resulting frame
-        cv2.imshow('Face Mask Detection', processed_frame)
-        
-        # Break the loop on 'q' key press
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-    
-    # Release resources
-    cap.release()
-    cv2.destroyAllWindows()
+
+    try:
+        # Load model
+        print(f"Loading model from {model_path}...")
+        model = torch.hub.load(
+            "ultralytics/yolov5", "custom", path=model_path, force_reload=True
+        )
+        model.to(device)
+        model.eval()
+        print("Model loaded successfully")
+
+        # Class names
+        class_names = ["with_mask", "without_mask", "mask_weared_incorrect"]
+        colors = [
+            (0, 255, 0),
+            (0, 0, 255),
+            (0, 255, 255),
+        ]  # Green for with mask, Red for without mask, Yellow for incorrect
+
+        # Open webcam
+        print(f"Opening camera device {args.camera}...")
+        cap = cv2.VideoCapture(args.camera)
+
+        # Set resolution
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, args.width)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, args.height)
+
+        if not cap.isOpened():
+            print(f"Error: Could not open camera device {args.camera}")
+            return
+
+        print("Camera opened successfully. Press 'q' to quit.")
+
+        # Initialize FPS calculation
+        fps_start_time = time.time()
+        fps_frame_count = 0
+        fps = 0
+
+        while True:
+            # Read frame
+            ret, frame = cap.read()
+            if not ret:
+                print("Error: Failed to capture image")
+                # Try to reconnect
+                print("Attempting to reconnect...")
+                cap.release()
+                time.sleep(1)
+                cap = cv2.VideoCapture(args.camera)
+                if not cap.isOpened():
+                    print("Reconnection failed. Exiting.")
+                    break
+                continue
+
+            try:
+                # Process frame
+                start_time = time.time()
+
+                # Inference
+                results = model(frame)
+
+                # Process results
+                for *xyxy, conf, cls in results.xyxy[0]:  # xyxy, confidence, class
+                    if conf > args.conf_thres:  # confidence threshold
+                        # Get coordinates and class
+                        x1, y1, x2, y2 = (
+                            int(xyxy[0]),
+                            int(xyxy[1]),
+                            int(xyxy[2]),
+                            int(xyxy[3]),
+                        )
+                        class_idx = int(cls)
+                        if class_idx < len(class_names):  # Safety check
+                            label = f"{class_names[class_idx]} {conf:.2f}"
+
+                            # Draw bounding box
+                            color = colors[class_idx]
+                            cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+
+                            # Add label
+                            cv2.putText(
+                                frame,
+                                label,
+                                (x1, y1 - 10),
+                                cv2.FONT_HERSHEY_SIMPLEX,
+                                0.5,
+                                color,
+                                2,
+                            )
+
+                end_time = time.time()
+
+                # Calculate FPS
+                process_time = end_time - start_time
+                fps_frame_count += 1
+
+                # Update FPS every second
+                if (end_time - fps_start_time) > 1.0:
+                    fps = fps_frame_count / (end_time - fps_start_time)
+                    fps_frame_count = 0
+                    fps_start_time = end_time
+
+                # Add FPS to frame
+                cv2.putText(
+                    frame,
+                    f"FPS: {fps:.2f}",
+                    (10, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    1,
+                    (0, 255, 0),
+                    2,
+                )
+
+                # Display the resulting frame
+                cv2.imshow("Face Mask Detection", frame)
+
+                # Break the loop on 'q' key press
+                if cv2.waitKey(1) & 0xFF == ord("q"):
+                    break
+
+            except Exception as e:
+                print(f"Error during inference: {e}")
+                continue
+
+        # Release resources
+        cap.release()
+        cv2.destroyAllWindows()
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
 
 if __name__ == "__main__":
     main()
