@@ -1,18 +1,34 @@
 # Face Mask Detection - Setup Guide
 
-This document provides detailed instructions for setting up the Face Mask Detection project.
+This document provides detailed instructions for setting up the Face Mask Detection project on **Windows**, **Linux**, and **macOS**.
 
 ## System Requirements
 
-- Python 3.6 or higher
-- pip (Python package installer)
-- Git
-- Camera/webcam for real-time detection
-- Recommended: CUDA-compatible GPU for faster training and inference
+- **Python 3.6 or higher** (3.8+ recommended)
+- **pip** (Python package installer)
+- **Git**
+- **Camera/webcam** for real-time detection
+- **Recommended**: CUDA-compatible GPU for faster training and inference
+
+### Windows-Specific Requirements
+
+- **Python**: Download from [python.org](https://www.python.org/downloads/) or use Microsoft Store
+- **Git**: Download from [git-scm.com](https://git-scm.com/download/win) or install via GitHub Desktop
+- **Visual Studio Build Tools** (if installing packages that require compilation)
 
 ## Quick Setup
 
-For a quick automated setup, run:
+### Windows
+
+Open Command Prompt or PowerShell and run:
+
+```cmd
+setup.bat
+```
+
+### Linux/macOS
+
+Open Terminal and run:
 
 ```bash
 # Make the setup script executable
@@ -22,31 +38,53 @@ chmod +x setup.sh
 ./setup.sh
 ```
 
-The script will:
+The setup scripts will:
 
-1. Create a virtual environment (recommended)
-2. Install all required dependencies
-3. Clone the YOLOv5 repository if needed
-4. Check for the model and dataset files
+1. Check for Python installation
+2. Create a virtual environment (recommended)
+3. Install all required dependencies
+4. Clone the YOLOv5 repository if needed
+5. Check for the model and dataset files
 
 ## Manual Setup
 
-If you prefer to set up manually or if the automated script doesn't work for you, follow these steps:
+If you prefer to set up manually or if the automated script doesn't work, follow these platform-specific steps:
 
 ### 1. Create a Virtual Environment (Recommended)
+
+**Windows (Command Prompt/PowerShell):**
+
+```cmd
+# Create a virtual environment
+python -m venv .venv
+
+# Activate the virtual environment
+.venv\Scripts\activate
+```
+
+**Windows (Git Bash):**
+
+```bash
+# Create a virtual environment
+python -m venv .venv
+
+# Activate the virtual environment
+source .venv/Scripts/activate
+```
+
+**Linux/macOS:**
 
 ```bash
 # Create a virtual environment
 python3 -m venv .venv
 
 # Activate the virtual environment
-# On Windows:
-.venv\Scripts\activate
-# On Linux/Mac:
 source .venv/bin/activate
 ```
 
 ### 2. Install Dependencies
+
+**All platforms:**
 
 ```bash
 # Install project dependencies
@@ -138,6 +176,38 @@ python webcam.py --camera 1  # Use a different camera (if you have multiple)
    - If using CPU, expect lower FPS
    - Reduce resolution with `--width` and `--height` flags
    - Consider using a smaller YOLOv5 model variant
+
+### Windows-Specific Troubleshooting
+
+5. **Python command not found**:
+   - Ensure Python is added to your PATH during installation
+   - Try using `py` instead of `python` command
+   - Reinstall Python from [python.org](https://www.python.org/downloads/) with "Add to PATH" checked
+
+6. **Virtual environment activation fails**:
+   - Use `python -m venv .venv` instead of `python3 -m venv .venv`
+   - Try running Command Prompt as Administrator
+   - Check Windows Execution Policy: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
+
+7. **Git command not found**:
+   - Install Git from [git-scm.com](https://git-scm.com/download/win)
+   - Restart Command Prompt after installation
+   - Use GitHub Desktop as an alternative
+
+8. **Package compilation errors**:
+   - Install Visual Studio Build Tools
+   - Try pre-compiled packages: `pip install --only-binary=all package_name`
+   - Use conda instead of pip for problematic packages
+
+9. **Permission errors**:
+   - Run Command Prompt as Administrator
+   - Check antivirus software isn't blocking Python
+   - Disable Windows Defender real-time protection temporarily during setup
+
+10. **Training fails with multiprocessing errors**:
+    - Always use `--workers 0` on Windows
+    - Reduce batch size if memory issues occur
+    - Close other applications to free up RAM
 
 ## Additional Resources
 

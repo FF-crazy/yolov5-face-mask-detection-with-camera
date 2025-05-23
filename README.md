@@ -13,16 +13,40 @@ The model was trained on [Face-Mask](https://www.kaggle.com/andrewmvd/face-mask-
 
 ### Setup
 
-* For automated setup, use the provided setup script:
+This project supports **Windows**, **Linux**, and **macOS**. Choose the appropriate setup method for your operating system:
+
+#### Quick Setup (Automated)
+
+**For Windows (Command Prompt):**
+
+```cmd
+setup.bat
+```
+
+**For Windows (PowerShell):**
+
+```powershell
+.\setup.ps1
+```
+
+*Note: You may need to adjust execution policy first: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`*
+
+**For Linux/macOS:**
 
 ```bash
 chmod +x setup.sh
 ./setup.sh
 ```
 
-* Or manually install dependencies:
+#### Manual Setup
 
-```bash
+**For Windows:**
+
+```cmd
+# Create and activate virtual environment
+python -m venv .venv
+.venv\Scripts\activate
+
 # Install dependencies
 pip install -r requirements.txt
 
@@ -30,9 +54,29 @@ pip install -r requirements.txt
 git clone https://github.com/ultralytics/yolov5
 cd yolov5
 pip install -r requirements.txt
+cd ..
+```
+
+**For Linux/macOS:**
+
+```bash
+# Create and activate virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Install yolov5
+git clone https://github.com/ultralytics/yolov5
+cd yolov5
+pip install -r requirements.txt
+cd ..
 ```
 
 For more detailed setup instructions, see [SETUP.md](SETUP.md).
+
+**Windows Users**: See [WINDOWS_SETUP.md](WINDOWS_SETUP.md) for a comprehensive Windows-specific guide.
 
 The project now includes:
 
