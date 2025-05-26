@@ -31,7 +31,7 @@ def parse_args():
         "--data", type=str, default="../mask_config.yaml", help="Path to data config file (default: ../mask_config.yaml)"
     )
     parser.add_argument(
-        "--weights", type=str, default="yolov5s.pt", help="Initial weights path (default: yolov5s.pt)"
+        "--weights", type=str, default="../models/mask_yolov5.pt", help="Initial weights path (default: ../models/mask_yolov5.pt)"
     )
     parser.add_argument(
         "--workers", type=int, default=0, help="Number of worker threads (default: 0)"
@@ -52,7 +52,7 @@ def parse_args():
         "--cache", action="store_true", help="Cache images for faster training"
     )
     parser.add_argument(
-        "--no-prepare", action="store_true", help="Skip running prepare.py before training"
+        "--prepare", action="store_true", help="Run prepare.py before training (not needed if dataset already exists)"
     )
     return parser.parse_args()
 
@@ -81,9 +81,11 @@ def main():
         except subprocess.CalledProcessError as e:
             print(f"Error: Failed to clone YOLOv5 repository or install dependencies: {e}")
             sys.exit(1)
+    else:
+        print("Using existing YOLOv5 repository")
 
-    # Run prepare.py if not skipped
-    if not args.no_prepare:
+    # Run prepare.py only if explicitly requested
+    if args.prepare:
         print("Preparing dataset...")
         try:
             subprocess.run(["python", "prepare.py"], check=True)
@@ -91,6 +93,8 @@ def main():
         except subprocess.CalledProcessError as e:
             print(f"Error: Failed to prepare dataset: {e}")
             sys.exit(1)
+    else:
+        print("Skipping dataset preparation (using existing dataset in ./datasets)")
 
     # Change directory to YOLOv5
     os.chdir("yolov5")
