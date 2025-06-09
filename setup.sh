@@ -24,7 +24,7 @@ fi
 
 # Create and activate virtual environment if venv is available
 echo -e "${YELLOW}Creating virtual environment...${NC}"
-if command_exists python3 -m venv; then
+if python3 -m venv -h >/dev/null 2>&1; then
     python3 -m venv .venv
     
     # Activate virtual environment based on OS
