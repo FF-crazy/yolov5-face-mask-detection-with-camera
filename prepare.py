@@ -44,8 +44,8 @@ def convert(size, box):
     """Convert VOC bbox coords to YOLO format"""
     dw = 1.0 / (size[0])
     dh = 1.0 / (size[1])
-    x = (box[0] + box[1]) / 2.0 - 1
-    y = (box[2] + box[3]) / 2.0 - 1
+    x = (box[0] + box[1]) / 2.0
+    y = (box[2] + box[3]) / 2.0
     w = box[1] - box[0]
     h = box[3] - box[2]
     x = x * dw
