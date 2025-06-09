@@ -75,19 +75,21 @@ def main():
             class_names = config["names"]
             print(f"Loaded class names: {class_names}")
 
-        # Dynamically generate colors based on number of classes
-        colors = []
-        np.random.seed(42)  # for consistent colors
-        for _ in range(len(class_names)):
-            colors.append(tuple(np.random.randint(0, 255, size=3).tolist()))
+        # Set fixed colors for known classes
+        colors = [
+            (0, 255, 0),   # with_mask
+            (0, 0, 255),   # without_mask
+            (0, 255, 255)  # mask worn incorrectly
+        ][: len(class_names)]
 
-        # Example of specific colors if needed, override dynamic ones
-        # if len(class_names) == 3: # Or map by name
-        #     colors = [
-        #         (0, 255, 0),  # Green for with_mask
-        #         (0, 0, 255),  # Red for without_mask
-        #         (0, 255, 255) # Yellow for incorrect
-        #     ]
+        # Fallback to random colors if number of classes differs
+        if len(colors) != len(class_names):
+            colors = []
+            np.random.seed(42)  # for consistent colors
+            for _ in range(len(class_names)):
+                colors.append(
+                    tuple(np.random.randint(0, 255, size=3).tolist())
+                )
 
         # Open webcam
         print(f"Opening camera device {args.camera}...")
