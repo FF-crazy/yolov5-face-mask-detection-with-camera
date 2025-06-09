@@ -203,6 +203,16 @@ If you encounter any issues, please check the following:
 
 For more troubleshooting tips, see [SETUP.md](SETUP.md).
 
+### Running Tests
+
+The project uses Python's built-in `unittest` framework. To run all tests, execute:
+
+```bash
+python -m unittest
+```
+
+This will discover and run the tests located in the `tests` directory.
+
 ### Reference
 
 * [Darknet](https://github.com/pjreddie/darknet/blob/master/scripts/voc_label.py)
